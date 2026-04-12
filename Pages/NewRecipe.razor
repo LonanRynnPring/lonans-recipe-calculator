@@ -1,0 +1,162 @@
+@page "/recipes/new"
+@inject AuthService Auth
+@inject FirestoreService Firestore
+@inject NavigationManager Nav
+
+<PageTitle>New Recipe</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7 col-md-9">
+        <h1 class="mb-4">New Recipe</h1>
+
+        @if (errorMessage != null)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        @if (step == 1)
+        {
+            <!-- Step 1: Recipe details -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Recipe Details</h5>
+                    <div class="mb-3">
+                        <label class="form-label">Recipe Name</label>
+                        <input @bind="recipe.Name" @bind:event="oninput" class="form-control"
+                               placeholder="e.g. Pasta Bolognese" />
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Number of Servings</label>
+                        <input @bind="recipe.Servings" type="number" step="0.5" min="0.5" class="form-control" />
+                    </div>
+                    <button class="btn btn-primary" @onclick="GoToIngredients" disabled="@(!CanProceedStep1)">
+                        Next: Add Ingredients &rarr;
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Step 2: Ingredients -->
+            <div class="card mb-3">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong>@recipe.Name</strong>
+                        <span class="text-muted">@recipe.Servings serving@(recipe.Servings == 1 ? "" : "s")</span>
+                    </div>
+                </div>
+            </div>
+
+            @if (recipe.Ingredients.Count > 0)
+            {
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="mb-3">Ingredients Added</h6>
+                        @foreach (var ing in recipe.Ingredients)
+                        {
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span>@ing.Name</span>
+                                <span class="text-muted small">
+                                    @ing.PricePerUnit p &times; @ing.AmountUsed = @ing.CostDisplay
+                                </span>
+                            </div>
+                        }
+                        <hr class="my-2" />
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>Total</span>
+                            <span class="text-success">@recipe.TotalCostDisplay</span>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>Per serving</span>
+                            <span>@recipe.CostPerServingDisplay</span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="mb-3">Add Ingredient</h6>
+                    <div class="mb-2">
+                        <label class="form-label">Name</label>
+                        <input @bind="current.Name" @bind:event="oninput" class="form-control"
+                               placeholder="e.g. Pasta" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Price per packet / unit (pence)</label>
+                        <input @bind="current.PricePerUnit" type="number" step="1" min="0" class="form-control"
+                               placeholder="e.g. 89 for £0.89" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount used in this recipe</label>
+                        <input @bind="current.AmountUsed" type="number" step="0.01" min="0" class="form-control"
+                               placeholder="e.g. 0.5 for half a packet" />
+                    </div>
+                    <button class="btn btn-outline-primary w-100" @onclick="AddIngredient" disabled="@(!CanAddIngredient)">
+                        + Add Ingredient
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="() => step = 1">&larr; Back</button>
+                <button class="btn btn-success flex-grow-1" @onclick="SaveRecipe"
+                        disabled="@(recipe.Ingredients.Count == 0 || saving)">
+                    @(saving ? "Saving..." : "Save Recipe")
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private Recipe recipe = new() { Servings = 4 };
+    private Ingredient current = new();
+    private int step = 1;
+    private bool saving;
+    private string? errorMessage;
+
+    private bool CanProceedStep1 => !string.IsNullOrWhiteSpace(recipe.Name) && recipe.Servings > 0;
+    private bool CanAddIngredient =>
+        !string.IsNullOrWhiteSpace(current.Name) &&
+        current.PricePerUnit >= 0 &&
+        current.AmountUsed > 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.InitializeAsync();
+        if (!Auth.IsAuthenticated)
+            Nav.NavigateTo("/login", replace: true);
+    }
+
+    private void GoToIngredients()
+    {
+        if (CanProceedStep1) step = 2;
+    }
+
+    private void AddIngredient()
+    {
+        if (!CanAddIngredient) return;
+        recipe.Ingredients.Add(new Ingredient
+        {
+            Name = current.Name.Trim(),
+            PricePerUnit = current.PricePerUnit,
+            AmountUsed = current.AmountUsed
+        });
+        current = new();
+    }
+
+    private async Task SaveRecipe()
+    {
+        saving = true;
+        errorMessage = null;
+        var id = await Firestore.SaveRecipeAsync(recipe);
+        if (id != null)
+            Nav.NavigateTo($"/recipes/{id}");
+        else
+        {
+            errorMessage = "Failed to save recipe. Please try again.";
+            saving = false;
+        }
+    }
+}

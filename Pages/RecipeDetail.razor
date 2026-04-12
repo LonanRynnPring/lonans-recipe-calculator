@@ -1,0 +1,122 @@
+@page "/recipes/{Id}"
+@inject AuthService Auth
+@inject FirestoreService Firestore
+@inject NavigationManager Nav
+
+<PageTitle>@(recipe?.Name ?? "Recipe")</PageTitle>
+
+@if (loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (recipe == null)
+{
+    <div class="alert alert-warning">Recipe not found.</div>
+    <a href="/recipes" class="btn btn-secondary">&larr; Back to Recipes</a>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <a href="/recipes" class="text-muted text-decoration-none small">&larr; My Recipes</a>
+            <h1 class="mt-1 mb-0">@recipe.Name</h1>
+            <span class="text-muted">@recipe.Servings serving@(recipe.Servings == 1 ? "" : "s")</span>
+        </div>
+        <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@deleting">
+            @(deleting ? "Deleting..." : "Delete")
+        </button>
+    </div>
+
+    @if (confirmDelete)
+    {
+        <div class="alert alert-warning d-flex align-items-center gap-3 mb-4">
+            <span>Delete <strong>@recipe.Name</strong>? This cannot be undone.</span>
+            <button class="btn btn-danger btn-sm" @onclick="DeleteRecipe">Yes, delete</button>
+            <button class="btn btn-secondary btn-sm" @onclick="() => confirmDelete = false">Cancel</button>
+        </div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="text-muted small">Total Cost</div>
+                    <div class="fs-2 fw-bold text-success">@recipe.TotalCostDisplay</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="text-muted small">Cost Per Serving</div>
+                    <div class="fs-2 fw-bold">@recipe.CostPerServingDisplay</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5>Ingredient Breakdown</h5>
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Ingredient</th>
+                    <th class="text-end">Price / unit</th>
+                    <th class="text-end">Amount used</th>
+                    <th class="text-end">Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ing in recipe.Ingredients)
+                {
+                    <tr>
+                        <td>@ing.Name</td>
+                        <td class="text-end">@ing.PricePerUnit p</td>
+                        <td class="text-end">@ing.AmountUsed</td>
+                        <td class="text-end">@ing.CostDisplay</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold table-light">
+                    <td colspan="3">Total</td>
+                    <td class="text-end text-success">@recipe.TotalCostDisplay</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private Recipe? recipe;
+    private bool loading = true;
+    private bool deleting;
+    private bool confirmDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.InitializeAsync();
+        if (!Auth.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", replace: true);
+            return;
+        }
+        recipe = await Firestore.GetRecipeAsync(Id);
+        loading = false;
+    }
+
+    private void ConfirmDelete() => confirmDelete = true;
+
+    private async Task DeleteRecipe()
+    {
+        deleting = true;
+        await Firestore.DeleteRecipeAsync(Id);
+        Nav.NavigateTo("/recipes");
+    }
+}

@@ -1,0 +1,65 @@
+@page "/login"
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+<PageTitle>Sign In</PageTitle>
+
+<div class="auth-container">
+    <div class="auth-card">
+        <h2 class="mb-4">Sign In</h2>
+
+        @if (errorMessage != null)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <EditForm Model="@model" OnValidSubmit="HandleLogin">
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <InputText @bind-Value="model.Email" class="form-control" type="email" autocomplete="email" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <InputText @bind-Value="model.Password" class="form-control" type="password" autocomplete="current-password" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100" disabled="@loading">
+                @(loading ? "Signing in..." : "Sign In")
+            </button>
+        </EditForm>
+
+        <p class="mt-3 text-center text-muted">
+            Don't have an account? <a href="/register">Register</a>
+        </p>
+    </div>
+</div>
+
+@code {
+    private readonly LoginModel model = new();
+    private string? errorMessage;
+    private bool loading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.InitializeAsync();
+        if (Auth.IsAuthenticated)
+            Nav.NavigateTo("/recipes", replace: true);
+    }
+
+    private async Task HandleLogin()
+    {
+        loading = true;
+        errorMessage = null;
+        var (success, error) = await Auth.SignInAsync(model.Email, model.Password);
+        if (success)
+            Nav.NavigateTo("/recipes", replace: true);
+        else
+            errorMessage = error;
+        loading = false;
+    }
+
+    private class LoginModel
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}

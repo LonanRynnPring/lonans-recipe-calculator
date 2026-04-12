@@ -1,0 +1,11 @@
+﻿@page "/"
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.InitializeAsync();
+        Nav.NavigateTo(Auth.IsAuthenticated ? "/recipes" : "/login", replace: true);
+    }
+}

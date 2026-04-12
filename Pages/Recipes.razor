@@ -1,0 +1,70 @@
+@page "/recipes"
+@inject AuthService Auth
+@inject FirestoreService Firestore
+@inject NavigationManager Nav
+
+<PageTitle>My Recipes</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Recipes</h1>
+    <a href="/recipes/new" class="btn btn-primary">+ New Recipe</a>
+</div>
+
+@if (loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading recipes...</p>
+    </div>
+}
+else if (recipes.Count == 0)
+{
+    <div class="text-center py-5">
+        <p class="text-muted fs-5">No recipes yet.</p>
+        <a href="/recipes/new" class="btn btn-primary mt-2">Create your first recipe</a>
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var recipe in recipes)
+        {
+            <div class="col-md-4">
+                <a href="/recipes/@recipe.Id" class="text-decoration-none text-dark">
+                    <div class="card h-100 recipe-card">
+                        <div class="card-body">
+                            <h5 class="card-title">@recipe.Name</h5>
+                            <p class="card-text text-muted small">
+                                @recipe.Ingredients.Count ingredient@(recipe.Ingredients.Count == 1 ? "" : "s")
+                                &middot; @recipe.Servings serving@(recipe.Servings == 1 ? "" : "s")
+                            </p>
+                            <div class="d-flex justify-content-between mt-3">
+                                <span class="fw-bold text-success">@recipe.TotalCostDisplay</span>
+                                <span class="text-muted">@recipe.CostPerServingDisplay / serving</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<Recipe> recipes = new();
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.InitializeAsync();
+        if (!Auth.IsAuthenticated)
+        {
+            Nav.NavigateTo("/login", replace: true);
+            return;
+        }
+        recipes = await Firestore.GetRecipesAsync();
+        loading = false;
+    }
+}
