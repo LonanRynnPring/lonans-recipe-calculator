@@ -57,7 +57,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span>@ing.Name</span>
                                 <span class="text-muted small">
-                                    @ing.PricePerUnit p &times; @ing.AmountUsed = @ing.CostDisplay
+                                    £@ing.PriceGBP.ToString("0.00") / @ing.PackageSize @ing.Unit, used @ing.AmountUsed @ing.Unit = @ing.CostDisplay
                                 </span>
                             </div>
                         }
@@ -83,14 +83,36 @@
                                placeholder="e.g. Pasta" />
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Price per packet / unit (pence)</label>
-                        <input @bind="current.PricePerUnit" type="number" step="1" min="0" class="form-control"
-                               placeholder="e.g. 89 for £0.89" />
+                        <label class="form-label">Price</label>
+                        <div class="input-group">
+                            <span class="input-group-text">£</span>
+                            <input @bind="current.PriceGBP" type="number" step="0.01" min="0" class="form-control"
+                                   placeholder="e.g. 0.89" />
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Package size</label>
+                        <div class="input-group">
+                            <input @bind="current.PackageSize" type="number" step="1" min="0" class="form-control"
+                                   placeholder="e.g. 500" />
+                            <select @bind="current.Unit" class="form-select" style="max-width: 110px;">
+                                <option value="g">g</option>
+                                <option value="kg">kg</option>
+                                <option value="ml">ml</option>
+                                <option value="L">L</option>
+                                <option value="items">items</option>
+                                <option value="tsp">tsp</option>
+                                <option value="tbsp">tbsp</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Amount used in this recipe</label>
-                        <input @bind="current.AmountUsed" type="number" step="0.01" min="0" class="form-control"
-                               placeholder="e.g. 0.5 for half a packet" />
+                        <div class="input-group">
+                            <input @bind="current.AmountUsed" type="number" step="0.01" min="0" class="form-control"
+                                   placeholder="e.g. 250" />
+                            <span class="input-group-text">@current.Unit</span>
+                        </div>
                     </div>
                     <button class="btn btn-outline-primary w-100" @onclick="AddIngredient" disabled="@(!CanAddIngredient)">
                         + Add Ingredient
@@ -119,7 +141,8 @@
     private bool CanProceedStep1 => !string.IsNullOrWhiteSpace(recipe.Name) && recipe.Servings > 0;
     private bool CanAddIngredient =>
         !string.IsNullOrWhiteSpace(current.Name) &&
-        current.PricePerUnit >= 0 &&
+        current.PriceGBP >= 0 &&
+        current.PackageSize > 0 &&
         current.AmountUsed > 0;
 
     protected override async Task OnInitializedAsync()
@@ -140,7 +163,9 @@
         recipe.Ingredients.Add(new Ingredient
         {
             Name = current.Name.Trim(),
-            PricePerUnit = current.PricePerUnit,
+            PriceGBP = current.PriceGBP,
+            PackageSize = current.PackageSize,
+            Unit = current.Unit,
             AmountUsed = current.AmountUsed
         });
         current = new();

@@ -65,7 +65,7 @@ else
             <thead>
                 <tr>
                     <th>Ingredient</th>
-                    <th class="text-end">Price / unit</th>
+                    <th class="text-end">Price / pkg</th>
                     <th class="text-end">Amount used</th>
                     <th class="text-end">Cost</th>
                 </tr>
@@ -75,8 +75,8 @@ else
                 {
                     <tr>
                         <td>@ing.Name</td>
-                        <td class="text-end">@ing.PricePerUnit p</td>
-                        <td class="text-end">@ing.AmountUsed</td>
+                        <td class="text-end">£@ing.PriceGBP.ToString("0.00") / @ing.PackageSize @ing.Unit</td>
+                        <td class="text-end">@ing.AmountUsed @ing.Unit</td>
                         <td class="text-end">@ing.CostDisplay</td>
                     </tr>
                 }

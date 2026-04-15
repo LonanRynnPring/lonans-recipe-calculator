@@ -8,7 +8,7 @@ public class Recipe
     public List<Ingredient> Ingredients { get; set; } = new();
     public DateTime CreatedAt { get; set; }
 
-    public decimal TotalCostPence => Ingredients.Sum(i => i.PricePerUnit * i.AmountUsed);
+    public decimal TotalCostPence => Ingredients.Sum(i => i.CostPence);
     public decimal CostPerServingPence => Servings > 0 ? TotalCostPence / Servings : 0;
     public string TotalCostDisplay => $"£{TotalCostPence / 100:0.00}";
     public string CostPerServingDisplay => $"£{CostPerServingPence / 100:0.00}";
