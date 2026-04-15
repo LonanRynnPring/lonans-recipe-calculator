@@ -29,7 +29,7 @@
         </EditForm>
 
         <p class="mt-3 text-center text-muted">
-            Already have an account? <a href="/login">Sign in</a>
+            Already have an account? <a href="login">Sign in</a>
         </p>
     </div>
 </div>
@@ -43,7 +43,7 @@
     {
         await Auth.InitializeAsync();
         if (Auth.IsAuthenticated)
-            Nav.NavigateTo("/recipes", replace: true);
+            Nav.NavigateTo("recipes", replace: true);
     }
 
     private async Task HandleRegister()
@@ -52,7 +52,7 @@
         errorMessage = null;
         var (success, error) = await Auth.SignUpAsync(model.Email, model.Password);
         if (success)
-            Nav.NavigateTo("/recipes", replace: true);
+            Nav.NavigateTo("recipes", replace: true);
         else
             errorMessage = error;
         loading = false;
