@@ -16,13 +16,13 @@
 else if (recipe == null)
 {
     <div class="alert alert-warning">Recipe not found.</div>
-    <a href="/recipes" class="btn btn-secondary">&larr; Back to Recipes</a>
+    <a href="recipes" class="btn btn-secondary">&larr; Back to Recipes</a>
 }
 else
 {
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
-            <a href="/recipes" class="text-muted text-decoration-none small">&larr; My Recipes</a>
+            <a href="recipes" class="text-muted text-decoration-none small">&larr; My Recipes</a>
             <h1 class="mt-1 mb-0">@recipe.Name</h1>
             <span class="text-muted">@recipe.Servings serving@(recipe.Servings == 1 ? "" : "s")</span>
         </div>
@@ -104,7 +104,7 @@ else
         await Auth.InitializeAsync();
         if (!Auth.IsAuthenticated)
         {
-            Nav.NavigateTo("/login", replace: true);
+            Nav.NavigateTo("login", replace: true);
             return;
         }
         recipe = await Firestore.GetRecipeAsync(Id);
@@ -117,6 +117,6 @@ else
     {
         deleting = true;
         await Firestore.DeleteRecipeAsync(Id);
-        Nav.NavigateTo("/recipes");
+        Nav.NavigateTo("recipes");
     }
 }

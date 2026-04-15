@@ -126,7 +126,7 @@
     {
         await Auth.InitializeAsync();
         if (!Auth.IsAuthenticated)
-            Nav.NavigateTo("/login", replace: true);
+            Nav.NavigateTo("login", replace: true);
     }
 
     private void GoToIngredients()
@@ -152,7 +152,7 @@
         errorMessage = null;
         var id = await Firestore.SaveRecipeAsync(recipe);
         if (id != null)
-            Nav.NavigateTo($"/recipes/{id}");
+            Nav.NavigateTo($"recipes/{id}");
         else
         {
             errorMessage = "Failed to save recipe. Please try again.";
