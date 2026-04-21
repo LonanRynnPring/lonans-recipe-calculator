@@ -71,6 +71,26 @@ public class FirestoreService
         return saved?.Name?.Split('/').Last();
     }
 
+    public async Task<bool> UpdateRecipeAsync(Recipe recipe)
+    {
+        var body = new
+        {
+            fields = new
+            {
+                name = new { stringValue = recipe.Name },
+                servings = new { doubleValue = (double)recipe.Servings },
+                ingredientsJson = new { stringValue = JsonSerializer.Serialize(recipe.Ingredients) },
+                createdAt = new { timestampValue = recipe.CreatedAt.ToString("O") }
+            }
+        };
+
+        var request = CreateRequest(HttpMethod.Patch, $"{BaseUrl}/users/{_auth.UserId}/recipes/{recipe.Id}");
+        request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+
+        var response = await _http.SendAsync(request);
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<bool> DeleteRecipeAsync(string recipeId)
     {
         var request = CreateRequest(HttpMethod.Delete, $"{BaseUrl}/users/{_auth.UserId}/recipes/{recipeId}");
